@@ -31,3 +31,5 @@ if __name__ == "__main__":
     
     with open(f"{name}_stripped{ext}", "wb") as out:
         out.write(data)
+    
+    input("Press Enter to exit")
