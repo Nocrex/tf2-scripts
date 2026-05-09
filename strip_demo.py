@@ -5,7 +5,7 @@ import os.path
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print(f"Usage: {sys.argv[0]} <demo file>")
-        exit(0)
+        sys.exit()
         
     demo = sys.argv[1]
     
@@ -16,6 +16,8 @@ if __name__ == "__main__":
     
     ind = data.find(b"\x04", 1065) # 4 is the packet type id for ConsoleCmd
     
+    stripped = 0
+    
     while ind != -1:
         tick, length = unpack("<II", data[ind+1:ind+1+4*2]) # read tick and length of command
         
@@ -24,12 +26,15 @@ if __name__ == "__main__":
             if command.isascii() and len(command) > 0 and command.decode().isprintable(): # checks to discard random data
                 print(f"{tick}: '{command.decode()}'")
                 data[ind+1+4*2:ind+4*2+length] = b" " * (length - 1) # overwrite command with spaces
+                stripped += 1
         
         ind = data.find(b"\x04", ind+1) # find next potential packet
     
     name, ext = os.path.splitext(demo)
     
+    print(f"{stripped} commands removed")
     with open(f"{name}_stripped{ext}", "wb") as out:
         out.write(data)
-    
+        
+    print(f"Saved to {name}_stripped{ext}")
     input("Press Enter to exit")
