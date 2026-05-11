@@ -18,10 +18,10 @@ if __name__ == "__main__":
     
     stripped = 0
     
-    while ind != -1:
+    while ind != -1 and len(data) >= ind + 9:
         tick, length = unpack("<II", data[ind+1:ind+1+4*2]) # read tick and length of command
         
-        if tick <= ticks and length < 256: # limit length, cuz the \x04 could be random data
+        if tick <= ticks and length < 256 and len(data) >= ind+1+4*2+length: # limit length, cuz the \x04 could be random data
             command = data[ind+1+4*2:ind+4*2+length] # get command bytes
             if command.isascii() and len(command) > 0 and command.decode().isprintable(): # checks to discard random data
                 print(f"{tick}: '{command.decode()}'")
