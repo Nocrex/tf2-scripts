@@ -2,13 +2,7 @@ from struct import unpack
 import sys
 import os.path
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f"Usage: {sys.argv[0]} <demo file>")
-        sys.exit()
-        
-    demo = sys.argv[1]
-    
+def strip(demo):
     with open(demo, "rb") as f:
         data = bytearray(f.read()) # Read demo into a bytearray
         
@@ -31,10 +25,19 @@ if __name__ == "__main__":
         ind = data.find(b"\x04", ind+1) # find next potential packet
     
     name, ext = os.path.splitext(demo)
-    
-    print(f"{stripped} commands removed")
     with open(f"{name}_stripped{ext}", "wb") as out:
         out.write(data)
+    return stripped
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <demo file>")
+        sys.exit()
         
+    demo = sys.argv[1]
+    stripped = strip(demo)
+    name, ext = os.path.splitext(demo)
+    
+    print(f"{stripped} commands removed")
     print(f"Saved to {name}_stripped{ext}")
     input("Press Enter to exit")
