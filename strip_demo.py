@@ -1,6 +1,7 @@
 from struct import unpack
 import sys
 import os.path
+import traceback
 
 def strip(demo_path, out_path):
     with open(demo_path, "rb") as f:
@@ -52,15 +53,18 @@ def strip(demo_path, out_path):
     return stripped
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f"Usage: {sys.argv[0]} <demo file>")
-        sys.exit()
+    try:
+        if len(sys.argv) != 2:
+            print(f"Usage: {sys.argv[0]} <demo file>")
+            sys.exit()
+            
+        demo = sys.argv[1]
+        name, ext = os.path.splitext(demo)
+        out_path = f"{name}_stripped{ext}"
+        stripped = strip(demo, out_path)
         
-    demo = sys.argv[1]
-    name, ext = os.path.splitext(demo)
-    out_path = f"{name}_stripped{ext}"
-    stripped = strip(demo, out_path)
-    
-    print(f"{stripped} commands removed")
-    print(f"Saved to {out_path}")
+        print(f"{stripped} commands removed")
+        print(f"Saved to {out_path}")
+    except Exception:
+        traceback.print_exc()
     input("Press Enter to exit")
