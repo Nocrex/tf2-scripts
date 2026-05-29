@@ -2,30 +2,52 @@ from struct import unpack
 import sys
 import os.path
 
-def strip(demo):
-    with open(demo, "rb") as f:
+def strip(demo_path, out_path):
+    with open(demo_path, "rb") as f:
         data = bytearray(f.read()) # Read demo into a bytearray
         
-    ticks, = unpack("<I" , data[1060:1064]) # get total tick count
-    
-    ind = data.find(b"\x04", 1065) # 4 is the packet type id for ConsoleCmd
+    ind = 1072 # end of header
     
     stripped = 0
     
-    while ind != -1 and len(data) >= ind + 9:
-        tick, length = unpack("<II", data[ind+1:ind+1+4*2]) # read tick and length of command
-        
-        if tick <= ticks and length < 256 and len(data) >= ind+1+4*2+length: # limit length, cuz the \x04 could be random data
-            command = data[ind+1+4*2:ind+4*2+length] # get command bytes
-            if command.isascii() and len(command) > 0 and command.decode().isprintable(): # checks to discard random data
-                print(f"{tick}: '{command.decode()}'")
-                data[ind+1+4*2:ind+4*2+length] = b" " * (length - 1) # overwrite command with spaces
+    while ind < len(data):
+
+        packet_type = data[ind]
+        ind += 1
+
+        match packet_type:
+            case 1 | 2: # Signon and Message
+                ind += 4 + 84
+                length, = unpack("<I", data[ind:ind+4])
+                ind += 4 + length
+                pass
+            case 3: # Synctick
+                ind += 4
+            case 4:
+                tick, length = unpack("<II", data[ind:ind+4*2]) # read tick and length of command
+                command = data[ind+4*2:ind+4*2+length] # get command bytes
+                print(f"{tick}: {bytes(command)}")
+
+                ind -= 1
+                del data[ind:ind+4*2+length+1]
                 stripped += 1
-        
-        ind = data.find(b"\x04", ind+1) # find next potential packet
+                
+            case 5: # UserCmd
+                ind += 8
+                length, = unpack("<I", data[ind:ind+4])
+                ind += 4 + length
+            case 6: # DataTable
+                ind += 4
+                length, = unpack("<I", data[ind:ind+4])
+                ind += 4 + length
+            case 7: # Stop
+                ind += 4
+            case 8: # StringTable
+                ind += 4
+                length, = unpack("<I", data[ind:ind+4])
+                ind += 4 + length
     
-    name, ext = os.path.splitext(demo)
-    with open(f"{name}_stripped{ext}", "wb") as out:
+    with open(out_path, "wb") as out:
         out.write(data)
     return stripped
 
@@ -35,9 +57,10 @@ if __name__ == "__main__":
         sys.exit()
         
     demo = sys.argv[1]
-    stripped = strip(demo)
     name, ext = os.path.splitext(demo)
+    out_path = f"{name}_stripped{ext}"
+    stripped = strip(demo, out_path)
     
     print(f"{stripped} commands removed")
-    print(f"Saved to {name}_stripped{ext}")
+    print(f"Saved to {out_path}")
     input("Press Enter to exit")
