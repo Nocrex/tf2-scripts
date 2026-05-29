@@ -15,36 +15,41 @@ def strip(demo_path, out_path):
 
         packet_type = data[ind]
         ind += 1
+        if packet_type == 7:
+            tick, = unpack("<I", data[ind:ind+3] + b"\0")
+            ind += 3
+        else:
+            tick, = unpack("<I", data[ind:ind+4])
+            ind += 4
 
         match packet_type:
             case 1 | 2: # Signon and Message
-                ind += 4 + 84
+                ind += 84
                 length, = unpack("<I", data[ind:ind+4])
                 ind += 4 + length
                 pass
             case 3: # Synctick
-                ind += 4
+                pass
             case 4:
-                tick, length = unpack("<II", data[ind:ind+4*2]) # read tick and length of command
-                command = data[ind+4*2:ind+4*2+length] # get command bytes
+                length, = unpack("<I", data[ind:ind+4]) # read tick and length of command
+                ind += 4
+                command = data[ind:ind+length] # get command bytes
                 print(f"{tick}: {bytes(command)}")
 
-                ind -= 1
+                ind -= 1 + 4 + 4
                 del data[ind:ind+4*2+length+1]
                 stripped += 1
                 
             case 5: # UserCmd
-                ind += 8
+                ind += 4
                 length, = unpack("<I", data[ind:ind+4])
                 ind += 4 + length
             case 6: # DataTable
-                ind += 4
                 length, = unpack("<I", data[ind:ind+4])
                 ind += 4 + length
             case 7: # Stop
-                ind += 4
+                pass
             case 8: # StringTable
-                ind += 4
                 length, = unpack("<I", data[ind:ind+4])
                 ind += 4 + length
     
